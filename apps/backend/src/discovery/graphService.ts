@@ -27,10 +27,26 @@ export type MergedTopologyGraph = Readonly<{
 
 export function buildMergedTopologyGraph(snapshot: DiscoverySnapshot, overlay: OverlayGraph): MergedTopologyGraph {
   const discoveredGraph = normalizeDiscoverySnapshot(snapshot);
+  return buildMergedTopologyGraphFromDiscovered(discoveredGraph, overlay);
+}
+
+export function buildMergedTopologyGraphFromSnapshots(snapshots: readonly DiscoverySnapshot[], overlay: OverlayGraph): MergedTopologyGraph {
+  const discoveredGraph = composeDiscoveredGraphs(snapshots.map(normalizeDiscoverySnapshot));
+  return buildMergedTopologyGraphFromDiscovered(discoveredGraph, overlay);
+}
+
+function buildMergedTopologyGraphFromDiscovered(discoveredGraph: DiscoveredGraph, overlay: OverlayGraph): MergedTopologyGraph {
   return {
     discoveredGraph,
     overlayGraph: cloneOverlayGraph(overlay),
     mergedGraph: mergeDiscoveredGraphWithOverlay(discoveredGraph, overlay),
+  };
+}
+
+function composeDiscoveredGraphs(graphs: readonly DiscoveredGraph[]): DiscoveredGraph {
+  return {
+    nodes: sortNodes(dedupeNodes(graphs.flatMap((graph) => graph.nodes))),
+    edges: sortEdges(dedupeEdges(graphs.flatMap((graph) => graph.edges))),
   };
 }
 

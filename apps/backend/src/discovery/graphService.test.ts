@@ -187,7 +187,7 @@ function snapshotWithRawEvidence(overrides: Partial<DiscoverySnapshot> = {}): Di
         label: 'Main router',
         baseUrl: 'https://router.local',
         username: 'root',
-        passwordEnvVar: 'ROUTER_PASSWORD',
+        identityFileEnvVar: 'ROUTER_IDENTITY_FILE',
       },
     ],
     devices: [],

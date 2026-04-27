@@ -11,7 +11,6 @@ const router: RouterConnection = {
   label: 'Main router',
   baseUrl: 'https://router.local',
   username: 'root',
-  passwordEnvVar: 'ROUTER_PASSWORD',
   sshHost: '192.168.1.1',
   sshPort: 2222,
   identityFileEnvVar: 'ROUTER_IDENTITY_FILE',
