@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import type { HealthStatus } from '@home-network-topology/shared';
 
-import { buildMergedTopologyGraph } from '../discovery/graphService.js';
+import { buildMergedTopologyGraphFromSnapshots } from '../discovery/graphService.js';
 import { OpenWrtDiscoveryCollector } from '../discovery/openWrtCollector.js';
 import type { TopologyRepository } from '../repositories/topologyRepository.js';
 import { summarizeRuntimeConfig, type LoadedRuntimeConfig } from '../runtimeConfig.js';
@@ -87,12 +87,12 @@ export const apiRoutes: FastifyPluginAsync<ApiRoutesOptions> = async (app, optio
   });
 
   app.get('/topology/graph', async (request, reply) => {
-    const snapshot = repository.getLatestSnapshot();
-    if (!snapshot) {
+    const snapshots = repository.getLatestSnapshotsByRouter();
+    if (snapshots.length === 0) {
       return reply.code(404).send({ message: 'No discovery snapshots have been captured yet' });
     }
 
-    return buildMergedTopologyGraph(snapshot, repository.getOverlay());
+    return buildMergedTopologyGraphFromSnapshots(snapshots, repository.getOverlay());
   });
 
   app.get('/topology/snapshots/:id', async (request, reply) => {

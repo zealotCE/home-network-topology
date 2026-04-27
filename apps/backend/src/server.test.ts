@@ -31,7 +31,7 @@ test('router connections are persisted through the REST API', async (t) => {
     label: 'Main router',
     baseUrl: 'https://router.local',
     username: 'admin',
-    passwordEnvVar: 'MAIN_ROUTER_PASSWORD',
+    identityFileEnvVar: 'MAIN_ROUTER_IDENTITY_FILE',
   };
 
   const createResponse = await app.inject({ method: 'POST', url: '/api/routers', payload: router });
@@ -66,7 +66,6 @@ routers:
     label: Config Router
     baseUrl: https://192.168.1.1
     username: root
-    passwordEnvVar: OPENWRT_PASSWORD
     sshHost: 192.168.1.1
     sshPort: 22
     identityFileEnvVar: OPENWRT_IDENTITY_FILE
@@ -91,7 +90,6 @@ routers:
     label: 'Config Router',
     baseUrl: 'https://192.168.1.1',
     username: 'root',
-    passwordEnvVar: 'OPENWRT_PASSWORD',
     sshHost: '192.168.1.1',
     sshPort: 22,
     identityFileEnvVar: 'OPENWRT_IDENTITY_FILE',
@@ -127,7 +125,7 @@ test('snapshots and overlays round-trip through SQLite-backed routes', async (t)
         label: 'Main router',
         baseUrl: 'https://router.local',
         username: 'admin',
-        passwordEnvVar: 'MAIN_ROUTER_PASSWORD',
+        identityFileEnvVar: 'MAIN_ROUTER_IDENTITY_FILE',
       },
     ],
     devices: [
@@ -187,6 +185,33 @@ test('snapshots and overlays round-trip through SQLite-backed routes', async (t)
   });
 });
 
+test('topology graph composes the latest snapshot for each router', async (t) => {
+  const app = buildServer({ database: { path: ':memory:' }, logger: false });
+  t.after(async () => {
+    await app.close();
+  });
+
+  const mainSnapshot = snapshotForRouter('snapshot-main-old', '2026-04-27T10:00:00.000Z', 'main-router', 'Main router', 'device-laptop', 'Laptop');
+  const staleMainSnapshot = snapshotForRouter('snapshot-main-stale', '2026-04-27T09:00:00.000Z', 'main-router', 'Main router stale', 'device-old', 'Old laptop');
+  const garageSnapshot = snapshotForRouter('snapshot-garage', '2026-04-27T11:00:00.000Z', 'garage-ap', 'Garage AP', 'device-camera', 'Camera');
+
+  for (const snapshot of [staleMainSnapshot, mainSnapshot, garageSnapshot]) {
+    const response = await app.inject({ method: 'POST', url: '/api/topology/snapshots', payload: snapshot });
+    assert.equal(response.statusCode, 201);
+  }
+
+  const graphResponse = await app.inject({ method: 'GET', url: '/api/topology/graph' });
+
+  assert.equal(graphResponse.statusCode, 200);
+  const graph = graphResponse.json() as { discoveredGraph: { nodes: Array<{ id: string }> } };
+  assert.deepEqual(graph.discoveredGraph.nodes.map((node) => node.id), [
+    'router-garage-ap',
+    'router-main-router',
+    'device-camera',
+    'device-laptop',
+  ]);
+});
+
 test('discovery route runs collector and persists raw command results', async (t) => {
   const rawCommand: DiscoveryCommandResult = {
     label: 'network_interfaces',
@@ -204,7 +229,7 @@ test('discovery route runs collector and persists raw command results', async (t
     label: 'Main router',
     baseUrl: 'https://router.local',
     username: 'root',
-    passwordEnvVar: 'ROUTER_PASSWORD',
+    identityFileEnvVar: 'ROUTER_IDENTITY_FILE',
     sshHost: '192.168.1.1',
     sshPort: 22,
   };
@@ -242,3 +267,19 @@ test('discovery route runs collector and persists raw command results', async (t
   assert.equal(latestSnapshotResponse.statusCode, 200);
   assert.deepEqual(latestSnapshotResponse.json().rawCommands, [rawCommand]);
 });
+
+function snapshotForRouter(snapshotId: string, capturedAt: string, routerId: string, routerLabel: string, deviceId: string, deviceLabel: string): DiscoverySnapshot {
+  return {
+    id: snapshotId,
+    capturedAt,
+    routers: [{ id: routerId, label: routerLabel, baseUrl: `https://${routerId}.local`, username: 'root', identityFileEnvVar: `${routerId.toUpperCase().replace(/-/gu, '_')}_IDENTITY_FILE` }],
+    devices: [{ id: deviceId, macAddress: 'AA:BB:CC:DD:EE:FF', ipAddresses: [], discoveredHostname: deviceLabel, wifiAssociations: [{ routerId, band: '5G' }], lastSeenAt: capturedAt }],
+    topology: {
+      nodes: [
+        { id: `router-${routerId}`, kind: 'router', label: routerLabel, routerId },
+        { id: deviceId, kind: 'device', label: deviceLabel, deviceId },
+      ],
+      edges: [{ id: `wifi-${routerId}-${deviceId}`, sourceNodeId: `router-${routerId}`, targetNodeId: deviceId, kind: 'wifi', band: '5G' }],
+    },
+  };
+}
