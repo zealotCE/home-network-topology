@@ -68,6 +68,11 @@ export function TopologyCanvas({ data, onDataChange }: TopologyCanvasProps) {
     };
   }, [data.graph.overlayGraph, prepared, setEdges, setNodes]);
 
+  useEffect(() => {
+    setNodes((currentNodes) => currentNodes.map((node) => ({ ...node, selected: selection?.kind === 'node' && selection.id === node.id })));
+    setEdges((currentEdges) => currentEdges.map((edge) => ({ ...edge, selected: selection?.kind === 'edge' && selection.id === edge.id })));
+  }, [selection, setEdges, setNodes]);
+
   const persistOverlay = async (overlay: OverlayGraph, successMessage: string) => {
     setSaveStatus('Saving edits…');
     try {

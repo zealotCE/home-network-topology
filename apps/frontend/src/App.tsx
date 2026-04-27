@@ -79,7 +79,7 @@ export default function App() {
           routers={loadState.routers}
           runtimeConfig={loadState.runtimeConfig}
           onRoutersChange={(routers) => setLoadState({ ...loadState, routers, topologyData: loadState.topologyData ? { ...loadState.topologyData, routers } : null })}
-          onDiscoveryComplete={(snapshot) => handleDiscoveryComplete(snapshot, loadState, setLoadState, setActiveView)}
+          onDiscoveryComplete={(snapshot) => handleDiscoveryComplete(snapshot, loadState, setLoadState)}
         />
       ) : null}
       {loadState.status === 'ready' && activeView === 'topology' ? (
@@ -91,11 +91,10 @@ export default function App() {
   );
 }
 
-function handleDiscoveryComplete(snapshot: DiscoverySnapshot, current: Extract<LoadState, { status: 'ready' }>, setLoadState: (state: LoadState) => void, setActiveView: (view: ActiveView) => void) {
+function handleDiscoveryComplete(snapshot: DiscoverySnapshot, current: Extract<LoadState, { status: 'ready' }>, setLoadState: (state: LoadState) => void) {
   void fetchTopologyData()
     .then((topologyData) => {
       setLoadState({ ...current, topologyData, routers: [...topologyData.routers], topologyError: undefined });
-      setActiveView('topology');
     })
     .catch((error: unknown) => {
       setLoadState({ ...current, topologyError: error instanceof Error ? error.message : `Discovery ${snapshot.id} completed, but topology refresh failed.` });

@@ -31,7 +31,7 @@ const defaultForm: RouterFormState = {
   label: '',
   baseUrl: 'https://192.168.1.1',
   username: 'root',
-  passwordEnvVar: 'OPENWRT_PASSWORD',
+  passwordEnvVar: '',
   sshHost: '',
   sshPort: '22',
   identityFileEnvVar: '',
@@ -51,7 +51,7 @@ export function RouterSetupPanel({ routers, runtimeConfig, onRoutersChange, onDi
       const saved = await createRouterConnection(router);
       onRoutersChange([...routers.filter((entry) => entry.id !== saved.id), saved].sort((left, right) => left.label.localeCompare(right.label)));
       setStatus({ kind: 'success', message: `${saved.label} saved. Test the SSH connection before discovery.` });
-      setForm({ ...defaultForm, id: '', label: '', baseUrl: form.baseUrl, username: form.username, passwordEnvVar: form.passwordEnvVar, sshPort: form.sshPort });
+      setForm({ ...defaultForm, id: '', label: '', baseUrl: form.baseUrl, username: form.username, passwordEnvVar: form.passwordEnvVar, sshPort: form.sshPort, identityFileEnvVar: form.identityFileEnvVar });
     } catch (error) {
       setStatus({ kind: 'error', message: error instanceof Error ? error.message : 'Unable to save router connection' });
     }
@@ -84,7 +84,7 @@ export function RouterSetupPanel({ routers, runtimeConfig, onRoutersChange, onDi
         <div>
           <p className="eyebrow">Router setup</p>
           <h2>Create, test, and discover OpenWrt routers</h2>
-          <p>{runtimeConfig?.ui.setupHelpText ?? 'Store only environment variable names for SSH secrets here. The backend resolves passwords or identity files from the container environment at runtime.'}</p>
+          <p>{runtimeConfig?.ui.setupHelpText ?? 'Use SSH keys or an agent for discovery. Store only environment variable names for mounted identity files here; password-based SSH is not implemented in v1.'}</p>
         </div>
         <ConfigSummary runtimeConfig={runtimeConfig} />
       </div>
@@ -108,8 +108,8 @@ export function RouterSetupPanel({ routers, runtimeConfig, onRoutersChange, onDi
             <input value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} placeholder="root" required />
           </label>
           <label>
-            <span>Password env var</span>
-            <input value={form.passwordEnvVar} onChange={(event) => setForm({ ...form, passwordEnvVar: event.target.value })} placeholder="OPENWRT_PASSWORD" required />
+            <span>Password env var (reserved)</span>
+            <input value={form.passwordEnvVar} onChange={(event) => setForm({ ...form, passwordEnvVar: event.target.value })} placeholder="Not used for v1 key-based SSH" />
           </label>
           <label>
             <span>SSH host override</span>
@@ -135,7 +135,7 @@ export function RouterSetupPanel({ routers, runtimeConfig, onRoutersChange, onDi
               <div>
                 <h3>{router.label}</h3>
                 <p>{router.baseUrl}</p>
-                <span>{router.username} · secret from {router.passwordEnvVar}</span>
+                <span>{router.username} · {router.identityFileEnvVar ? `identity file from ${router.identityFileEnvVar}` : 'SSH key or agent auth'}</span>
               </div>
               <div className="button-row">
                 <button type="button" className="ghost-button" onClick={() => testRouter(router)} disabled={status.kind === 'testing' || status.kind === 'discovering'}>Test connection</button>
@@ -180,7 +180,7 @@ function toRouterConnection(form: RouterFormState): RouterConnection {
     label: form.label.trim(),
     baseUrl: form.baseUrl.trim(),
     username: form.username.trim(),
-    passwordEnvVar: form.passwordEnvVar.trim(),
+    passwordEnvVar: optionalText(form.passwordEnvVar),
     sshHost: optionalText(form.sshHost),
     sshPort: Number.isInteger(sshPort) && sshPort > 0 ? sshPort : undefined,
     identityFileEnvVar: optionalText(form.identityFileEnvVar),
