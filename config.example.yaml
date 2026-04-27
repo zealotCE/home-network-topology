@@ -7,16 +7,16 @@ discoveryIntervalSeconds: 900
 
 ui:
   defaultView: setup
-  setupHelpText: Mount a YAML config for router defaults, then test SSH before discovery. Keep secret values in environment variables or mounted files only.
+  setupHelpText: Mount a YAML config for router defaults, then test key-based SSH before discovery. Keep private keys in mounted files only.
 
 routers:
   - id: main-router
     label: Main OpenWrt router
     baseUrl: https://192.168.1.1
     username: root
-    passwordEnvVar: OPENWRT_PASSWORD
     sshHost: 192.168.1.1
     sshPort: 22
-    # Optional: set this to an environment variable whose value is the path
-    # to a private key mounted into the container, not the key contents.
+    # Set this to an environment variable whose value is the path to a private
+    # key mounted into the container, not the key contents. Password-based SSH
+    # is not implemented in v1 because discovery runs OpenSSH in batch mode.
     identityFileEnvVar: OPENWRT_IDENTITY_FILE

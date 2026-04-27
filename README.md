@@ -13,7 +13,7 @@ Self-hosted home network topology app for OpenWrt-based discovery and manual top
 
 ## Quick start with Docker Compose
 
-1. Copy and edit the example config if needed. Keep secret values out of YAML; use environment variable names such as `OPENWRT_PASSWORD`.
+1. Copy and edit the example config if needed. Keep secret values out of YAML; use environment variable names such as `OPENWRT_IDENTITY_FILE` for mounted SSH keys.
 
    ```bash
    cp config.example.yaml config.local.yaml
@@ -21,10 +21,9 @@ Self-hosted home network topology app for OpenWrt-based discovery and manual top
 
 2. Point Compose at the config you want to mount. The checked-in `docker-compose.yml` mounts `config.example.yaml` by default for demonstration; for real deployments, change the volume to `./config.local.yaml:/config/config.yaml:ro`.
 
-3. Export any secrets referenced by your config. Example:
+3. Export any mounted identity-file paths referenced by your config. Example:
 
    ```bash
-   export OPENWRT_PASSWORD='your-router-password'
    export OPENWRT_IDENTITY_FILE='/run/secrets/openwrt_identity'
    ```
 
@@ -46,9 +45,9 @@ Supported top-level keys:
 - `discoveryIntervalSeconds`: documented operator cadence for manual/scheduled discovery; v1 does not run background scheduling.
 - `ui.defaultView`: `topology` or `setup`.
 - `ui.setupHelpText`: operator-facing help text shown on the setup screen.
-- `routers`: optional router definitions with `id`, `label`, `baseUrl`, `username`, `passwordEnvVar`, and optional `sshHost`, `sshPort`, `identityFileEnvVar`.
+- `routers`: optional router definitions with `id`, `label`, `baseUrl`, `username`, optional `sshHost`, `sshPort`, `identityFileEnvVar`, and reserved `passwordEnvVar` metadata.
 
-Secrets are resolved indirectly. `passwordEnvVar` and `identityFileEnvVar` are names of environment variables, not secret values. Do not commit real passwords or private key contents.
+Secrets are resolved indirectly. `identityFileEnvVar` is the name of an environment variable whose value is a mounted private-key path, not key contents. `passwordEnvVar` is optional reserved metadata only; v1 runs OpenSSH in batch mode and does not implement password-based SSH. Do not commit real passwords or private key contents.
 
 ## Persistence and volumes
 
@@ -67,9 +66,9 @@ Use `docker compose down -v` only when you intentionally want to delete persiste
 
 ## SSH secret handling
 
-- Keep passwords in environment variables referenced by config/UI (`OPENWRT_PASSWORD`, etc.).
+- Use SSH key or agent-based authentication for router discovery; password-based SSH is not implemented in v1.
 - Mount SSH private keys read-only from outside the repo/image and point `OPENWRT_IDENTITY_FILE` at the in-container path.
-- The app stores env var names for credentials; it does not need plaintext passwords in YAML examples or API responses.
+- The app stores env var names for mounted identity files; it does not need plaintext passwords in YAML examples or API responses.
 - Discovery uses read-only OpenWrt commands and should connect with the least-privileged router account that can run the required read commands.
 
 ## Operator UX
