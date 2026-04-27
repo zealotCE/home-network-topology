@@ -17,14 +17,14 @@ describe('runtime config validation', () => {
           label: 'Main router',
           baseUrl: 'https://192.168.1.1',
           username: 'root',
-          passwordEnvVar: 'OPENWRT_PASSWORD',
+          identityFileEnvVar: 'OPENWRT_IDENTITY_FILE',
         },
       ],
       dataDirectory: './data',
       discoveryIntervalSeconds: 300,
       ui: {
         defaultView: 'setup',
-        setupHelpText: 'Use env var names for SSH secrets.',
+          setupHelpText: 'Use env var names for mounted SSH keys.',
       },
     });
 
@@ -59,7 +59,6 @@ describe('runtime config validation', () => {
     assert.equal(result.ok, false);
     assert.match(result.errors.join('\n'), /routers\[0\]\.label/);
     assert.match(result.errors.join('\n'), /routers\[0\]\.baseUrl/);
-    assert.match(result.errors.join('\n'), /routers\[0\]\.passwordEnvVar/);
     assert.match(result.errors.join('\n'), /discoveryIntervalSeconds/);
   });
 });

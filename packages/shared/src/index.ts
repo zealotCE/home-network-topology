@@ -21,7 +21,7 @@ export type RouterConnection = {
   label: string;
   baseUrl: string;
   username: string;
-  passwordEnvVar: string;
+  passwordEnvVar?: string;
   sshHost?: string;
   sshPort?: number;
   identityFileEnvVar?: string;
@@ -234,10 +234,14 @@ function validateRouterConnection(input: unknown, path: string, errors: string[]
     return;
   }
 
-  for (const key of ['id', 'label', 'baseUrl', 'username', 'passwordEnvVar'] as const) {
+  for (const key of ['id', 'label', 'baseUrl', 'username'] as const) {
     if (!isNonBlankString(input[key])) {
       errors.push(`${path}.${key} must be a non-empty string`);
     }
+  }
+
+  if (input.passwordEnvVar !== undefined && !isNonBlankString(input.passwordEnvVar)) {
+    errors.push(`${path}.passwordEnvVar must be a non-empty string when provided`);
   }
 
   if (isNonBlankString(input.baseUrl) && !isHttpUrl(input.baseUrl)) {
