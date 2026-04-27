@@ -1,0 +1,22 @@
+# Example runtime configuration for Docker Compose deployments.
+# Do not place SSH passwords, private keys, or tokens in this file.
+# Reference environment variable names only; the container resolves them at runtime.
+
+dataDirectory: /data
+discoveryIntervalSeconds: 900
+
+ui:
+  defaultView: setup
+  setupHelpText: Mount a YAML config for router defaults, then test SSH before discovery. Keep secret values in environment variables or mounted files only.
+
+routers:
+  - id: main-router
+    label: Main OpenWrt router
+    baseUrl: https://192.168.1.1
+    username: root
+    passwordEnvVar: OPENWRT_PASSWORD
+    sshHost: 192.168.1.1
+    sshPort: 22
+    # Optional: set this to an environment variable whose value is the path
+    # to a private key mounted into the container, not the key contents.
+    identityFileEnvVar: OPENWRT_IDENTITY_FILE

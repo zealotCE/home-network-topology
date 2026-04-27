@@ -1,0 +1,32 @@
+services:
+  topology:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: home-network-topology:local
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3000
+      TOPOLOGY_DATA_DIR: /data
+      TOPOLOGY_CONFIG_PATH: /config/config.yaml
+      # Define router secret values in your local shell/.env before starting Compose.
+      # OPENWRT_PASSWORD: ${OPENWRT_PASSWORD:?Set OPENWRT_PASSWORD outside this file}
+      # OPENWRT_IDENTITY_FILE: /run/secrets/openwrt_identity
+    volumes:
+      - topology-data:/data
+      - ./config.example.yaml:/config/config.yaml:ro
+      # Optional SSH key mount; keep private keys outside the image and repo.
+      # - ${OPENWRT_IDENTITY_FILE:?Set OPENWRT_IDENTITY_FILE}:/run/secrets/openwrt_identity:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  topology-data:
