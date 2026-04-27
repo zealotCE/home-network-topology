@@ -30,6 +30,8 @@ export function TopologyInspector({ selected, selectedEdge, summary, overlay, al
         </div>
       </section>
 
+      <DeviceSearchList allNodes={allNodes} onSelectNode={onSelectNode} />
+
       <section className="detail-card" data-testid="topology-inspector">
         <p className="eyebrow">Selection detail</p>
         {selected ? <NodeDetail selected={selected} overlay={overlay} onSelectEdge={onSelectEdge} onSaveOverlay={onSaveOverlay} /> : null}
@@ -38,6 +40,57 @@ export function TopologyInspector({ selected, selectedEdge, summary, overlay, al
       </section>
     </aside>
   );
+}
+
+function DeviceSearchList({ allNodes, onSelectNode }: Readonly<{
+  allNodes: ReadonlyMap<string, TopologyNodeData>;
+  onSelectNode: (nodeId: string) => void;
+}>) {
+  const [query, setQuery] = useState('');
+  const devices = useMemo(() => [...allNodes.values()]
+    .filter((entry) => entry.node.kind === 'device')
+    .sort((left, right) => left.node.label.localeCompare(right.node.label, 'en', { numeric: true, sensitivity: 'base' })), [allNodes]);
+  const normalizedQuery = query.trim().toLowerCase();
+  const results = normalizedQuery
+    ? devices.filter((entry) => searchableDeviceText(entry).includes(normalizedQuery))
+    : devices;
+
+  return (
+    <section className="device-search-card" data-testid="device-search-list">
+      <div>
+        <p className="eyebrow">Device list</p>
+        <label>
+          <span>Search visible devices</span>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Hostname, IP, MAC, vendor…" />
+        </label>
+      </div>
+      <div className="device-search-results" aria-live="polite">
+        {results.length > 0 ? results.map((entry) => (
+          <button type="button" className="device-search-result" key={entry.node.id} onClick={() => onSelectNode(entry.node.id)}>
+            <strong>{entry.node.label}</strong>
+            <span>{deviceSearchDetail(entry)}</span>
+          </button>
+        )) : <p>No visible devices match this search.</p>}
+      </div>
+    </section>
+  );
+}
+
+function searchableDeviceText(entry: TopologyNodeData): string {
+  return [
+    entry.node.label,
+    entry.node.deviceId,
+    entry.device?.macAddress,
+    entry.device?.discoveredHostname,
+    entry.device?.dhcpHostname,
+    entry.device?.vendor,
+    ...(entry.device?.ipAddresses ?? []),
+    ...(entry.device?.wifiAssociations.map((association) => association.routerId) ?? []),
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+
+function deviceSearchDetail(entry: TopologyNodeData): string {
+  return entry.device?.ipAddresses[0] ?? entry.device?.macAddress ?? entry.node.deviceId ?? entry.connectionMode;
 }
 
 function SummaryMetric({ label, value }: Readonly<{ label: string; value: number }>) {

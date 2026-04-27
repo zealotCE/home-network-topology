@@ -5,8 +5,8 @@ const snapshot = {
   id: 'snapshot-qa',
   capturedAt: '2026-04-27T12:00:00.000Z',
   routers: [
-    { id: 'main-router', label: 'Main Router', baseUrl: 'https://router.local', username: 'admin', passwordEnvVar: 'ROUTER_PASSWORD' },
-    { id: 'garage-ap', label: 'Garage AP', baseUrl: 'https://garage-ap.local', username: 'admin', passwordEnvVar: 'AP_PASSWORD' },
+    { id: 'main-router', label: 'Main Router', baseUrl: 'https://router.local', username: 'admin', identityFileEnvVar: 'ROUTER_IDENTITY_FILE' },
+    { id: 'garage-ap', label: 'Garage AP', baseUrl: 'https://garage-ap.local', username: 'admin', identityFileEnvVar: 'AP_IDENTITY_FILE' },
   ],
   devices: [
     {
@@ -82,6 +82,10 @@ test('renders the composed topology and inspector metadata', async ({ page }) =>
   await expect(page.getByTestId('topology-node-router-garage-ap')).toContainText('Garage AP');
   await expect(page.getByTestId('topology-node-switch-office')).toContainText('Office Switch');
   await expect(page.getByText('Wi‑Fi devices')).toBeVisible();
+
+  await page.getByLabel('Search visible devices').fill('192.168.1.40');
+  await page.getByTestId('device-search-list').getByRole('button', { name: /media-nas/ }).click();
+  await expect(page.getByTestId('topology-inspector')).toContainText('AA:BB:CC:DD:EE:02');
 
   await page.getByTestId('topology-node-device-laptop').click();
   await expect(page.getByTestId('topology-inspector')).toContainText('AA:BB:CC:DD:EE:01');
@@ -177,10 +181,10 @@ test('creates a router, tests connection, and runs discovery from setup', async 
   await page.getByLabel('Display label').fill('Lab Router');
   await page.getByLabel('Web UI URL').fill('https://192.168.1.2');
   await page.getByLabel('SSH username').fill('root');
-  await page.getByLabel('Password env var').fill('LAB_OPENWRT_PASSWORD');
+  await page.getByLabel('Identity file env var').fill('LAB_OPENWRT_IDENTITY_FILE');
   await page.getByRole('button', { name: 'Create router' }).click();
   await expect(page.getByRole('status')).toContainText('Lab Router saved');
-  await expect(page.getByTestId('router-card-lab-router')).toContainText('secret from LAB_OPENWRT_PASSWORD');
+  await expect(page.getByTestId('router-card-lab-router')).toContainText('identity file from LAB_OPENWRT_IDENTITY_FILE');
 
   await page.getByTestId('router-card-lab-router').getByRole('button', { name: 'Test connection' }).click();
   await expect(page.getByRole('status')).toContainText('Lab Router is reachable');
