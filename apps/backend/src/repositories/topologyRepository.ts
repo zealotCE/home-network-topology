@@ -127,6 +127,30 @@ export class TopologyRepository {
     return row ? this.getSnapshot(row.id) : undefined;
   }
 
+  getLatestSnapshotsByRouter(): DiscoverySnapshot[] {
+    const rows = this.db.prepare(`
+      SELECT DISTINCT discovery_snapshots.id, discovery_snapshots.captured_at, discovery_snapshots.topology_json, discovery_snapshots.raw_commands_json
+      FROM discovery_snapshots
+      INNER JOIN snapshot_routers ON snapshot_routers.snapshot_id = discovery_snapshots.id
+      WHERE discovery_snapshots.id IN (
+        SELECT latest.snapshot_id
+        FROM (
+          SELECT snapshot_routers.router_id, snapshot_routers.snapshot_id, discovery_snapshots.captured_at
+          FROM snapshot_routers
+          INNER JOIN discovery_snapshots ON discovery_snapshots.id = snapshot_routers.snapshot_id
+          ORDER BY discovery_snapshots.captured_at DESC, snapshot_routers.snapshot_id DESC
+        ) AS latest
+        GROUP BY latest.router_id
+      )
+      ORDER BY discovery_snapshots.captured_at DESC, discovery_snapshots.id DESC
+    `).all() as SnapshotRow[];
+
+    return rows.flatMap((row) => {
+      const snapshot = this.getSnapshot(row.id);
+      return snapshot ? [snapshot] : [];
+    });
+  }
+
   getSnapshot(id: string): DiscoverySnapshot | undefined {
     const snapshot = this.db.prepare('SELECT id, captured_at, topology_json, raw_commands_json FROM discovery_snapshots WHERE id = ?').get(id) as SnapshotRow | undefined;
     if (!snapshot) {
@@ -317,7 +341,7 @@ function toRouterConnection(row: RouterRow): RouterConnection {
     label: row.label,
     baseUrl: row.base_url,
     username: row.username,
-    passwordEnvVar: row.password_env_var,
+    passwordEnvVar: row.password_env_var || undefined,
     sshHost: row.ssh_host ?? undefined,
     sshPort: row.ssh_port ?? undefined,
     identityFileEnvVar: row.identity_file_env_var ?? undefined,
@@ -330,7 +354,7 @@ function toRouterParams(router: RouterConnection) {
     label: router.label,
     baseUrl: router.baseUrl,
     username: router.username,
-    passwordEnvVar: router.passwordEnvVar,
+    passwordEnvVar: router.passwordEnvVar ?? '',
     sshHost: router.sshHost ?? null,
     sshPort: router.sshPort ?? null,
     identityFileEnvVar: router.identityFileEnvVar ?? null,

@@ -34,7 +34,7 @@ export function parseRouterConnection(input: unknown): ParseResult<RouterConnect
     label: requiredString(input.label, 'label', errors),
     baseUrl: requiredString(input.baseUrl, 'baseUrl', errors),
     username: requiredString(input.username, 'username', errors),
-    passwordEnvVar: requiredString(input.passwordEnvVar, 'passwordEnvVar', errors),
+    passwordEnvVar: optionalNonBlankString(input.passwordEnvVar, 'passwordEnvVar', errors),
     sshHost: optionalString(input.sshHost, 'sshHost', errors),
     sshPort: optionalPort(input.sshPort, 'sshPort', errors),
     identityFileEnvVar: optionalString(input.identityFileEnvVar, 'identityFileEnvVar', errors),
@@ -109,7 +109,7 @@ function parseRouterConnectionValue(input: unknown, path: string, errors: string
     label: requiredString(input.label, `${path}.label`, errors),
     baseUrl: requiredString(input.baseUrl, `${path}.baseUrl`, errors),
     username: requiredString(input.username, `${path}.username`, errors),
-    passwordEnvVar: requiredString(input.passwordEnvVar, `${path}.passwordEnvVar`, errors),
+    passwordEnvVar: optionalNonBlankString(input.passwordEnvVar, `${path}.passwordEnvVar`, errors),
     sshHost: optionalString(input.sshHost, `${path}.sshHost`, errors),
     sshPort: optionalPort(input.sshPort, `${path}.sshPort`, errors),
     identityFileEnvVar: optionalString(input.identityFileEnvVar, `${path}.identityFileEnvVar`, errors),
@@ -309,6 +309,19 @@ function optionalString(input: unknown, path: string, errors: string[]): string 
   return undefined;
 }
 
+function optionalNonBlankString(input: unknown, path: string, errors: string[]): string | undefined {
+  if (input === undefined) {
+    return undefined;
+  }
+
+  if (typeof input === 'string' && input.trim().length > 0) {
+    return input;
+  }
+
+  errors.push(`${path} must be a non-empty string when provided`);
+  return undefined;
+}
+
 function optionalNumber(input: unknown, path: string, errors: string[]): number | undefined {
   if (input === undefined) {
     return undefined;
@@ -406,7 +419,7 @@ function isRecord(input: unknown): input is Record<string, unknown> {
 }
 
 function emptyRouterConnection(): RouterConnection {
-  return { id: '', label: '', baseUrl: '', username: '', passwordEnvVar: '' };
+  return { id: '', label: '', baseUrl: '', username: '' };
 }
 
 function emptyDiscoveryCommandResult(): DiscoveryCommandResult {
