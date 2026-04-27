@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+.git
+.sisyphus
+apps/backend/data
+apps/frontend/test-results
+apps/frontend/playwright-report
+Dockerfile
+docker-compose.yml
+*.log

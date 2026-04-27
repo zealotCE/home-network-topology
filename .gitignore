@@ -1,0 +1,14 @@
+node_modules/
+**/node_modules/
+.pnpm-store/
+dist/
+**/dist/
+coverage/
+**/coverage/
+**/test-results/
+*.tsbuildinfo
+**/*.tsbuildinfo
+.DS_Store
+.env
+*.log
+apps/backend/data/
