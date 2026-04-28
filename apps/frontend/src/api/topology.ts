@@ -67,6 +67,40 @@ export async function createRouterConnection(router: RouterConnection, signal?: 
   return parseResponse<RouterConnection>(response, '/api/routers');
 }
 
+export async function updateRouterConnection(router: RouterConnection, signal?: AbortSignal): Promise<RouterConnection> {
+  const response = await fetch(`/api/routers/${encodeURIComponent(router.id)}`, {
+    method: 'PUT',
+    signal,
+    headers: jsonHeaders(),
+    body: JSON.stringify(router),
+  });
+
+  return parseResponse<RouterConnection>(response, `/api/routers/${router.id}`);
+}
+
+export async function deleteRouterConnection(routerId: string, signal?: AbortSignal): Promise<void> {
+  const response = await fetch(`/api/routers/${encodeURIComponent(routerId)}`, {
+    method: 'DELETE',
+    signal,
+    headers: { Accept: 'application/json' },
+  });
+
+  if (!response.ok) {
+    await parseResponse<unknown>(response, `/api/routers/${routerId}`);
+  }
+}
+
+export async function testCandidateRouterConnection(router: RouterConnection, signal?: AbortSignal): Promise<RouterConnectionTestResult> {
+  const response = await fetch('/api/routers/test-connection', {
+    method: 'POST',
+    signal,
+    headers: jsonHeaders(),
+    body: JSON.stringify(router),
+  });
+
+  return parseResponse<RouterConnectionTestResult>(response, '/api/routers/test-connection');
+}
+
 export async function testRouterConnection(routerId: string, signal?: AbortSignal): Promise<RouterConnectionTestResult> {
   const response = await fetch(`/api/routers/${encodeURIComponent(routerId)}/test-connection`, {
     method: 'POST',
