@@ -21,7 +21,8 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 
 RUN pnpm build \
-  && pnpm prune --prod
+  && mkdir -p /out/apps \
+  && pnpm --filter @home-network-topology/backend deploy --prod --legacy /out/apps/backend
 
 FROM node:22-bookworm-slim AS runtime
 
@@ -39,12 +40,7 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/* \
   && corepack enable
 
-COPY --from=build /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/packages ./packages
-COPY --from=build /app/apps/backend/package.json ./apps/backend/package.json
-COPY --from=build /app/apps/backend/node_modules ./apps/backend/node_modules
-COPY --from=build /app/apps/backend/dist ./apps/backend/dist
+COPY --from=build /out/apps/backend ./apps/backend
 COPY --from=build /app/apps/frontend/dist ./apps/frontend/dist
 
 EXPOSE 3000
