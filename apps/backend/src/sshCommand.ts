@@ -39,6 +39,8 @@ export type SshChildProcess = {
 };
 
 const DEFAULT_TIMEOUT_MS = 30_000;
+const DEFAULT_DATA_DIR = '/data';
+const KNOWN_HOSTS_FILENAME = 'ssh_known_hosts';
 
 export function runSshCommand(options: RunSshCommandOptions): Promise<SshCommandResult> {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -107,6 +109,10 @@ function buildSshArgs(options: RunSshCommandOptions, timeoutMs: number): string[
     '-o',
     'BatchMode=yes',
     '-o',
+    'StrictHostKeyChecking=accept-new',
+    '-o',
+    `UserKnownHostsFile=${getKnownHostsFile()}`,
+    '-o',
     `ConnectTimeout=${Math.max(1, Math.ceil(timeoutMs / 1000))}`,
   ];
 
@@ -120,6 +126,11 @@ function buildSshArgs(options: RunSshCommandOptions, timeoutMs: number): string[
 
   args.push('--', `${options.username}@${options.host}`, ...options.command);
   return args;
+}
+
+function getKnownHostsFile(): string {
+  const dataDir = (process.env.TOPOLOGY_DATA_DIR ?? DEFAULT_DATA_DIR).replace(/\/+$/u, '') || DEFAULT_DATA_DIR;
+  return `${dataDir}/${KNOWN_HOSTS_FILENAME}`;
 }
 
 function validateOptions(options: RunSshCommandOptions, timeoutMs: number): void {

@@ -37,6 +37,10 @@ test('runSshCommand captures stdout for a successful command', async () => {
         '-o',
         'BatchMode=yes',
         '-o',
+        'StrictHostKeyChecking=accept-new',
+        '-o',
+        'UserKnownHostsFile=/data/ssh_known_hosts',
+        '-o',
         'ConnectTimeout=5',
         '-p',
         '2222',
@@ -52,6 +56,43 @@ test('runSshCommand captures stdout for a successful command', async () => {
       options: { shell: false, stdio: ['ignore', 'pipe', 'pipe'] },
     },
   ]);
+});
+
+test('runSshCommand stores host-key trust in the configured data directory', async () => {
+  const originalDataDir = process.env.TOPOLOGY_DATA_DIR;
+  process.env.TOPOLOGY_DATA_DIR = '/var/lib/topology/';
+
+  try {
+    const child = createFakeChild();
+    const calls: SpawnCall[] = [];
+    const resultPromise = runSshCommand({
+      host: 'router.lan',
+      username: 'root',
+      command: ['true'],
+      timeoutMs: 1_000,
+      spawn: createSpawn(calls, child),
+    });
+
+    child.emit('close', 0, null);
+
+    assert.equal((await resultPromise).exitCode, 0);
+    assert.deepEqual(calls[0]?.args.slice(0, 8), [
+      '-o',
+      'BatchMode=yes',
+      '-o',
+      'StrictHostKeyChecking=accept-new',
+      '-o',
+      'UserKnownHostsFile=/var/lib/topology/ssh_known_hosts',
+      '-o',
+      'ConnectTimeout=1',
+    ]);
+  } finally {
+    if (originalDataDir === undefined) {
+      delete process.env.TOPOLOGY_DATA_DIR;
+    } else {
+      process.env.TOPOLOGY_DATA_DIR = originalDataDir;
+    }
+  }
 });
 
 test('runSshCommand captures stderr and non-zero exit code', async () => {
