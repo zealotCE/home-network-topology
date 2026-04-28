@@ -69,6 +69,7 @@ Use `docker compose down -v` only when you intentionally want to delete persiste
 - Use SSH key or agent-based authentication for router discovery; password-based SSH is not implemented in v1.
 - Mount SSH private keys read-only from outside the repo/image and point `OPENWRT_IDENTITY_FILE` at the in-container path.
 - The app stores env var names for mounted identity files; it does not need plaintext passwords in YAML examples or API responses.
+- Discovery runs OpenSSH with `BatchMode=yes`, `StrictHostKeyChecking=accept-new`, and `UserKnownHostsFile=$TOPOLOGY_DATA_DIR/ssh_known_hosts` (Docker default: `/data/ssh_known_hosts`). Fresh single-user deployments trust a router host key on first successful connection without prompting, then persist it on the Docker volume so later changed host keys fail instead of being silently accepted.
 - Discovery uses read-only OpenWrt commands and should connect with the least-privileged router account that can run the required read commands.
 
 ## Operator UX
