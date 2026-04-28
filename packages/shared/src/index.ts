@@ -1,4 +1,4 @@
-export const APP_NAME = 'Home Network Topology';
+export const APP_NAME = '家庭网络拓扑';
 
 export type HealthStatus = {
   status: 'ok';

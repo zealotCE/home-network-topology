@@ -1,22 +1,21 @@
-# Example runtime configuration for Docker Compose deployments.
-# Do not place SSH passwords, private keys, or tokens in this file.
-# Reference environment variable names only; the container resolves them at runtime.
+# Docker Compose 部署的示例运行配置。
+# 不要在此文件中保存 SSH 密码、私钥或令牌。
+# 这里只填写环境变量名；容器会在运行时解析它们。
 
 dataDirectory: /data
 discoveryIntervalSeconds: 900
 
 ui:
   defaultView: setup
-  setupHelpText: Mount a YAML config for router defaults, then test key-based SSH before discovery. Keep private keys in mounted files only.
+  setupHelpText: 已挂载 YAML 配置作为路由器默认值。请先测试基于密钥的 SSH 连接，再运行发现；私钥只保存在挂载文件中。
 
 routers:
   - id: main-router
-    label: Main OpenWrt router
+    label: 主 OpenWrt 路由器
     baseUrl: https://192.168.1.1
     username: root
     sshHost: 192.168.1.1
     sshPort: 22
-    # Set this to an environment variable whose value is the path to a private
-    # key mounted into the container, not the key contents. Password-based SSH
-    # is not implemented in v1 because discovery runs OpenSSH in batch mode.
+    # 这里填写环境变量名；该变量的值应是容器内挂载私钥文件的路径，
+    # 不是私钥内容。发现流程使用 OpenSSH 批处理模式，当前不支持 SSH 密码。
     identityFileEnvVar: OPENWRT_IDENTITY_FILE
