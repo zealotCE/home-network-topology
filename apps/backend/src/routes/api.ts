@@ -54,6 +54,15 @@ export const apiRoutes: FastifyPluginAsync<ApiRoutesOptions> = async (app, optio
     return reply.code(201).send(repository.upsertRouterConnection(parsed.value));
   });
 
+  app.post('/routers/test-connection', async (request, reply) => {
+    const parsed = parseRouterConnection(request.body);
+    if (!parsed.ok) {
+      return reply.code(400).send({ errors: parsed.errors });
+    }
+
+    return discoveryCollector.testConnection(parsed.value);
+  });
+
   app.delete('/routers/:id', async (request, reply) => {
     const { id } = parseIdParams(request.params);
     const deleted = repository.deleteRouterConnection(id);

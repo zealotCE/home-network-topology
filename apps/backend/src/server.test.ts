@@ -60,10 +60,10 @@ dataDirectory: ${tempDir}
 discoveryIntervalSeconds: 900
 ui:
   defaultView: setup
-  setupHelpText: Configure routers with env var names only.
+  setupHelpText: 已挂载 YAML 配置作为路由器默认值。
 routers:
   - id: config-router
-    label: Config Router
+    label: 配置路由器
     baseUrl: https://192.168.1.1
     username: root
     sshHost: 192.168.1.1
@@ -87,7 +87,7 @@ routers:
   assert.equal(routersResponse.statusCode, 200);
   assert.deepEqual(routersResponse.json(), [{
     id: 'config-router',
-    label: 'Config Router',
+    label: '配置路由器',
     baseUrl: 'https://192.168.1.1',
     username: 'root',
     sshHost: '192.168.1.1',
@@ -105,7 +105,7 @@ routers:
     discoveryIntervalSeconds: 900,
     ui: {
       defaultView: 'setup',
-      setupHelpText: 'Configure routers with env var names only.',
+      setupHelpText: '已挂载 YAML 配置作为路由器默认值。',
     },
   });
 });
@@ -268,6 +268,35 @@ test('discovery route runs collector and persists raw command results', async (t
   assert.deepEqual(latestSnapshotResponse.json().rawCommands, [rawCommand]);
 });
 
+test('candidate router connection test does not persist unsaved routers', async (t) => {
+  const router: RouterConnection = {
+    id: 'candidate-router',
+    label: 'Candidate router',
+    baseUrl: 'https://192.168.1.2',
+    username: 'root',
+    sshPort: 22,
+  };
+  const app = buildServer({
+    database: { path: ':memory:' },
+    logger: false,
+    discoveryCollector: {
+      testConnection: async (inputRouter) => ({ routerId: inputRouter.id, reachable: true, command: emptyCommandResult() }),
+      collectSnapshot: async () => ({ id: 'unused', capturedAt: new Date(0).toISOString(), routers: [], devices: [], topology: { nodes: [], edges: [] } }),
+    },
+  });
+  t.after(async () => {
+    await app.close();
+  });
+
+  const testResponse = await app.inject({ method: 'POST', url: '/api/routers/test-connection', payload: router });
+  assert.equal(testResponse.statusCode, 200);
+  assert.deepEqual(testResponse.json(), { routerId: 'candidate-router', reachable: true, command: emptyCommandResult() });
+
+  const listResponse = await app.inject({ method: 'GET', url: '/api/routers' });
+  assert.equal(listResponse.statusCode, 200);
+  assert.deepEqual(listResponse.json(), []);
+});
+
 function snapshotForRouter(snapshotId: string, capturedAt: string, routerId: string, routerLabel: string, deviceId: string, deviceLabel: string): DiscoverySnapshot {
   return {
     id: snapshotId,
@@ -281,5 +310,19 @@ function snapshotForRouter(snapshotId: string, capturedAt: string, routerId: str
       ],
       edges: [{ id: `wifi-${routerId}-${deviceId}`, sourceNodeId: `router-${routerId}`, targetNodeId: deviceId, kind: 'wifi', band: '5G' }],
     },
+  };
+}
+
+function emptyCommandResult(): DiscoveryCommandResult {
+  return {
+    label: 'connection_test',
+    command: ['ubus', 'call', 'system', 'board'],
+    startedAt: '2026-04-27T10:00:00.000Z',
+    completedAt: '2026-04-27T10:00:01.000Z',
+    exitCode: 0,
+    signal: null,
+    stdout: '{}',
+    stderr: '',
+    timedOut: false,
   };
 }
