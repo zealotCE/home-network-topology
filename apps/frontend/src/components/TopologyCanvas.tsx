@@ -26,10 +26,10 @@ const nodeTypes: NodeTypes = {
 };
 
 const edgeLabels: Record<TopologyEdge['kind'], string> = {
-  ethernet: 'Ethernet',
+  ethernet: '以太网',
   wifi: 'Wi‑Fi',
-  inferred: 'Inferred',
-  manual: 'Manual',
+  inferred: '推断',
+  manual: '手动',
 };
 
 type TopologyCanvasProps = Readonly<{
@@ -48,7 +48,7 @@ export function TopologyCanvas({ data, onDataChange }: TopologyCanvasProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<TopologyFlowNode>(prepared.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(prepared.edges);
   const [selection, setSelection] = useState<SelectionState>(prepared.nodes[0] ? { kind: 'node', id: prepared.nodes[0].id } : null);
-  const [saveStatus, setSaveStatus] = useState('Ready');
+  const [saveStatus, setSaveStatus] = useState('就绪');
   const selected = selection?.kind === 'node' ? prepared.nodeDataById.get(selection.id) ?? null : null;
   const selectedEdge = selection?.kind === 'edge' ? prepared.edgeById.get(selection.id) ?? null : null;
 
@@ -74,14 +74,14 @@ export function TopologyCanvas({ data, onDataChange }: TopologyCanvasProps) {
   }, [selection, setEdges, setNodes]);
 
   const persistOverlay = async (overlay: OverlayGraph, successMessage: string) => {
-    setSaveStatus('Saving edits…');
+    setSaveStatus('正在保存修改…');
     try {
       await saveOverlayGraph(cleanOverlay(overlay));
       const refreshed = await fetchTopologyData();
       onDataChange(refreshed);
       setSaveStatus(successMessage);
     } catch (error) {
-      setSaveStatus(error instanceof Error ? error.message : 'Unable to save edits');
+      setSaveStatus(error instanceof Error ? error.message : '无法保存修改');
     }
   };
 
@@ -103,7 +103,7 @@ export function TopologyCanvas({ data, onDataChange }: TopologyCanvasProps) {
       ...data.graph.overlayGraph,
       edges: [...data.graph.overlayGraph.edges.filter((edge) => edge.id !== id), { id, sourceNodeId: connection.source, targetNodeId: connection.target, kind: 'manual' }],
       hiddenEdgeIds: (data.graph.overlayGraph.hiddenEdgeIds ?? []).filter((edgeId) => edgeId !== id),
-    }, 'Manual link saved');
+    }, '手动连接已保存');
     setSelection({ kind: 'edge', id });
   };
 
@@ -111,51 +111,51 @@ export function TopologyCanvas({ data, onDataChange }: TopologyCanvasProps) {
     void persistOverlay({
       ...data.graph.overlayGraph,
       nodePositions: upsertPosition(data.graph.overlayGraph.nodePositions ?? [], { nodeId: node.id, x: node.position.x, y: node.position.y }),
-    }, 'Position pinned');
+    }, '位置已固定');
   };
 
   const addManualSwitch = () => {
     const id = `manual-switch-${Date.now().toString(36)}`;
     void persistOverlay({
       ...data.graph.overlayGraph,
-      manualSwitches: [...data.graph.overlayGraph.manualSwitches, { id, label: 'Unmanaged switch', portCount: 8 }],
+      manualSwitches: [...data.graph.overlayGraph.manualSwitches, { id, label: '未命名交换机', portCount: 8 }],
       hiddenNodeIds: (data.graph.overlayGraph.hiddenNodeIds ?? []).filter((nodeId) => nodeId !== id),
       nodePositions: upsertPosition(data.graph.overlayGraph.nodePositions ?? [], { nodeId: id, x: 96, y: 96 }),
-    }, 'Manual switch saved');
+    }, '手动交换机已保存');
     setSelection({ kind: 'node', id });
   };
 
   const relayout = () => {
-    void persistOverlay({ ...data.graph.overlayGraph, nodePositions: [] }, 'Layout reset');
+    void persistOverlay({ ...data.graph.overlayGraph, nodePositions: [] }, '布局已重置');
   };
 
   if (graph.nodes.length === 0) {
     return (
       <section className="canvas-empty" data-testid="topology-empty-state">
-        <p className="eyebrow">No topology yet</p>
-        <h2>Run discovery to populate the canvas.</h2>
-        <p>The backend responded, but the composed graph has no visible nodes. Add routers through discovery, then use manual switches and links to correct unmanaged physical topology.</p>
+        <p className="eyebrow">暂无拓扑</p>
+        <h2>运行发现后即可生成网络图。</h2>
+        <p>后端已响应，但当前组合图没有可见节点。请先添加路由器并运行发现，再用手动交换机和连接修正未管理的物理拓扑。</p>
       </section>
     );
   }
 
   return (
     <div className="topology-workspace" data-testid="topology-workspace">
-      <section className="canvas-panel" aria-label="Topology canvas">
+      <section className="canvas-panel" aria-label="拓扑画布">
         <div className="canvas-toolbar">
           <div>
-            <p className="eyebrow">Editable overlay graph</p>
-            <h2>{graph.nodes.length} nodes · {graph.edges.length} links</h2>
+            <p className="eyebrow">可编辑拓扑覆盖层</p>
+            <h2>{graph.nodes.length} 个节点 · {graph.edges.length} 条连接</h2>
             <span className="save-status" role="status">{saveStatus}</span>
           </div>
           <div className="toolbar-actions">
-            <button type="button" onClick={addManualSwitch}>Add switch</button>
-            <button type="button" onClick={relayout}>Re-layout</button>
-            <div className="legend" aria-label="Topology legend">
-              <span><i className="legend-dot legend-dot--router" />Router</span>
+            <button type="button" onClick={addManualSwitch}>添加交换机</button>
+            <button type="button" onClick={relayout}>重新布局</button>
+            <div className="legend" aria-label="拓扑图例">
+              <span><i className="legend-dot legend-dot--router" />路由器</span>
               <span><i className="legend-dot legend-dot--accessPoint" />AP</span>
-              <span><i className="legend-dot legend-dot--device" />Device</span>
-              <span><i className="legend-dot legend-dot--manualSwitch" />Manual</span>
+              <span><i className="legend-dot legend-dot--device" />设备</span>
+              <span><i className="legend-dot legend-dot--manualSwitch" />手动</span>
             </div>
           </div>
         </div>
@@ -328,7 +328,7 @@ function cleanOverlay(overlay: OverlayGraph): OverlayGraph {
   return {
     manualSwitches: overlay.manualSwitches.map((manualSwitch) => ({
       ...manualSwitch,
-      label: manualSwitch.label.trim() || 'Unmanaged switch',
+      label: manualSwitch.label.trim() || '未命名交换机',
       tags: cleanTags(manualSwitch.tags),
       notes: cleanText(manualSwitch.notes),
     })),

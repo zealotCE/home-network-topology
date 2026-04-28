@@ -17,23 +17,23 @@ type TopologyInspectorProps = Readonly<{
 
 export function TopologyInspector({ selected, selectedEdge, summary, overlay, allNodes, allEdges, onSelectNode, onSelectEdge, onSaveOverlay }: TopologyInspectorProps) {
   return (
-    <aside className="inspector-panel" aria-label="Topology inspector">
+    <aside className="inspector-panel" aria-label="拓扑详情面板">
       <section className="summary-card">
-        <p className="eyebrow">Network summary</p>
+        <p className="eyebrow">网络概览</p>
         <div className="summary-grid">
-          <SummaryMetric label="Routers" value={summary.routerCount} />
-          <SummaryMetric label="APs" value={summary.accessPointCount} />
-          <SummaryMetric label="Manual switches" value={summary.manualSwitchCount} />
-          <SummaryMetric label="Wi‑Fi devices" value={summary.wifiDeviceCount} />
-          <SummaryMetric label="Wired devices" value={summary.wiredDeviceCount} />
-          <SummaryMetric label="Links" value={summary.linkCount} />
+          <SummaryMetric label="路由器" value={summary.routerCount} />
+          <SummaryMetric label="AP" value={summary.accessPointCount} />
+          <SummaryMetric label="手动交换机" value={summary.manualSwitchCount} />
+          <SummaryMetric label="Wi‑Fi 设备" value={summary.wifiDeviceCount} />
+          <SummaryMetric label="有线设备" value={summary.wiredDeviceCount} />
+          <SummaryMetric label="连接" value={summary.linkCount} />
         </div>
       </section>
 
       <DeviceSearchList allNodes={allNodes} onSelectNode={onSelectNode} />
 
       <section className="detail-card" data-testid="topology-inspector">
-        <p className="eyebrow">Selection detail</p>
+        <p className="eyebrow">所选详情</p>
         {selected ? <NodeDetail selected={selected} overlay={overlay} onSelectEdge={onSelectEdge} onSaveOverlay={onSaveOverlay} /> : null}
         {!selected && selectedEdge ? <EdgeDetail edge={selectedEdge} overlay={overlay} onSaveOverlay={onSaveOverlay} /> : null}
         {!selected && !selectedEdge ? <EmptySelection overlay={overlay} allNodes={allNodes} allEdges={allEdges} onSelectNode={onSelectNode} onSelectEdge={onSelectEdge} onSaveOverlay={onSaveOverlay} /> : null}
@@ -58,10 +58,10 @@ function DeviceSearchList({ allNodes, onSelectNode }: Readonly<{
   return (
     <section className="device-search-card" data-testid="device-search-list">
       <div>
-        <p className="eyebrow">Device list</p>
+        <p className="eyebrow">设备列表</p>
         <label>
-          <span>Search visible devices</span>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Hostname, IP, MAC, vendor…" />
+          <span>搜索可见设备</span>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="主机名、IP、MAC、厂商…" />
         </label>
       </div>
       <div className="device-search-results" aria-live="polite">
@@ -70,7 +70,7 @@ function DeviceSearchList({ allNodes, onSelectNode }: Readonly<{
             <strong>{entry.node.label}</strong>
             <span>{deviceSearchDetail(entry)}</span>
           </button>
-        )) : <p>No visible devices match this search.</p>}
+        )) : <p>没有可见设备匹配当前搜索。</p>}
       </div>
     </section>
   );
@@ -119,26 +119,26 @@ function EmptySelection({ overlay, allNodes, allEdges, onSelectNode, onSelectEdg
 
   return (
     <div className="empty-selection">
-      <h2>Select a node or link</h2>
-      <p>Choose a router, device, manual switch, or link to edit labels, notes, tags, visibility, and manual topology corrections.</p>
+      <h2>选择节点或连接</h2>
+      <p>选择路由器、设备、手动交换机或连接后，可以编辑名称、备注、标签、可见性和手动拓扑修正。</p>
       <RestoreList
         hiddenNodeIds={hiddenNodeIds}
         hiddenEdgeIds={hiddenEdgeIds}
         hiddenDeviceIds={hiddenDeviceIds}
         hiddenManualSwitchIds={hiddenManualSwitchIds}
         onRestoreNode={(nodeId) => {
-          onSaveOverlay({ ...overlay, hiddenNodeIds: (overlay.hiddenNodeIds ?? []).filter((id) => id !== nodeId) }, 'Node shown');
+          onSaveOverlay({ ...overlay, hiddenNodeIds: (overlay.hiddenNodeIds ?? []).filter((id) => id !== nodeId) }, '节点已显示');
           onSelectNode(nodeId);
         }}
         onRestoreDevice={(deviceId) => {
-          onSaveOverlay({ ...overlay, deviceOverlays: overlay.deviceOverlays.map((entry) => entry.deviceId === deviceId ? { ...entry, hidden: false } : entry) }, 'Device shown');
+          onSaveOverlay({ ...overlay, deviceOverlays: overlay.deviceOverlays.map((entry) => entry.deviceId === deviceId ? { ...entry, hidden: false } : entry) }, '设备已显示');
         }}
         onRestoreManualSwitch={(switchId) => {
-          onSaveOverlay({ ...overlay, manualSwitches: overlay.manualSwitches.map((entry) => entry.id === switchId ? { ...entry, hidden: false } : entry) }, 'Switch shown');
+          onSaveOverlay({ ...overlay, manualSwitches: overlay.manualSwitches.map((entry) => entry.id === switchId ? { ...entry, hidden: false } : entry) }, '交换机已显示');
           onSelectNode(switchId);
         }}
         onRestoreEdge={(edgeId) => {
-          onSaveOverlay({ ...overlay, hiddenEdgeIds: (overlay.hiddenEdgeIds ?? []).filter((id) => id !== edgeId) }, 'Link shown');
+          onSaveOverlay({ ...overlay, hiddenEdgeIds: (overlay.hiddenEdgeIds ?? []).filter((id) => id !== edgeId) }, '连接已显示');
           onSelectEdge(edgeId);
         }}
       />
@@ -170,7 +170,7 @@ function NodeDetail({ selected, overlay, onSelectEdge, onSaveOverlay }: Readonly
       onSaveOverlay({
         ...overlay,
         manualSwitches: overlay.manualSwitches.map((entry) => entry.id === node.id ? { ...entry, label, notes, tags: parseTags(tags) } : entry),
-      }, 'Switch edits saved');
+      }, '交换机修改已保存');
       return;
     }
 
@@ -181,21 +181,21 @@ function NodeDetail({ selected, overlay, onSelectEdge, onSaveOverlay }: Readonly
     onSaveOverlay({
       ...overlay,
       deviceOverlays: upsertDeviceOverlay(overlay, node.deviceId, { displayName: label, notes, tags: parseTags(tags) }),
-    }, 'Device edits saved');
+    }, '设备修改已保存');
   };
 
   const hideNode = () => {
     if (node.kind === 'manualSwitch') {
-      onSaveOverlay({ ...overlay, manualSwitches: overlay.manualSwitches.map((entry) => entry.id === node.id ? { ...entry, hidden: true } : entry) }, 'Switch hidden');
+      onSaveOverlay({ ...overlay, manualSwitches: overlay.manualSwitches.map((entry) => entry.id === node.id ? { ...entry, hidden: true } : entry) }, '交换机已隐藏');
       return;
     }
 
     if (node.deviceId) {
-      onSaveOverlay({ ...overlay, deviceOverlays: upsertDeviceOverlay(overlay, node.deviceId, { hidden: true }) }, 'Device hidden');
+      onSaveOverlay({ ...overlay, deviceOverlays: upsertDeviceOverlay(overlay, node.deviceId, { hidden: true }) }, '设备已隐藏');
       return;
     }
 
-    onSaveOverlay({ ...overlay, hiddenNodeIds: addUnique(overlay.hiddenNodeIds ?? [], node.id) }, 'Node hidden');
+    onSaveOverlay({ ...overlay, hiddenNodeIds: addUnique(overlay.hiddenNodeIds ?? [], node.id) }, '节点已隐藏');
   };
 
   const deleteManualSwitch = () => {
@@ -204,49 +204,49 @@ function NodeDetail({ selected, overlay, onSelectEdge, onSaveOverlay }: Readonly
       manualSwitches: overlay.manualSwitches.filter((entry) => entry.id !== node.id),
       edges: overlay.edges.filter((edge) => edge.sourceNodeId !== node.id && edge.targetNodeId !== node.id),
       nodePositions: (overlay.nodePositions ?? []).filter((position) => position.nodeId !== node.id),
-    }, 'Manual switch removed');
+    }, '手动交换机已删除');
   };
 
   return (
     <div className="node-detail">
       <div>
         <h2>{node.label}</h2>
-        <p>{node.kind === 'manualSwitch' ? 'Manual topology element' : 'Discovered topology element'}</p>
+        <p>{node.kind === 'manualSwitch' ? '手动拓扑元素' : '发现到的拓扑元素'}</p>
       </div>
 
       <div className="edit-form">
         <label>
-          <span>Display label</span>
+          <span>显示名称</span>
           <input value={label} onChange={(event) => setLabel(event.target.value)} disabled={node.kind === 'router'} />
         </label>
         <label>
-          <span>Notes</span>
-          <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Rack, room, port notes…" />
+          <span>备注</span>
+          <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="机柜、房间、端口备注…" />
         </label>
         <label>
-          <span>Tags</span>
-          <input value={tags} onChange={(event) => setTags(event.target.value)} placeholder="office, poe, critical" />
+          <span>标签</span>
+          <input value={tags} onChange={(event) => setTags(event.target.value)} placeholder="办公室、PoE、关键" />
         </label>
         <div className="button-row">
-          <button type="button" onClick={save} disabled={node.kind === 'router'}>Save edits</button>
-          <button type="button" className="ghost-button" onClick={hideNode}>Hide node</button>
-          {node.kind === 'manualSwitch' ? <button type="button" className="danger-button" onClick={deleteManualSwitch}>Delete switch</button> : null}
+          <button type="button" onClick={save} disabled={node.kind === 'router'}>保存修改</button>
+          <button type="button" className="ghost-button" onClick={hideNode}>隐藏节点</button>
+          {node.kind === 'manualSwitch' ? <button type="button" className="danger-button" onClick={deleteManualSwitch}>删除交换机</button> : null}
         </div>
       </div>
 
       <dl className="metadata-list">
-        <Metadata label="Hostname" value={device?.discoveredHostname ?? device?.dhcpHostname ?? node.label} />
+        <Metadata label="主机名" value={device?.discoveredHostname ?? device?.dhcpHostname ?? node.label} />
         <Metadata label="MAC" value={device?.macAddress} />
         <Metadata label="IP" value={device?.ipAddresses.join(', ')} />
-        <Metadata label="Vendor" value={device?.vendor} />
-        <Metadata label="Router ID" value={node.routerId ?? selected.device?.wifiAssociations[0]?.routerId} />
+        <Metadata label="厂商" value={device?.vendor} />
+        <Metadata label="路由器 ID" value={node.routerId ?? selected.device?.wifiAssociations[0]?.routerId} />
         <Metadata label="WebUI" value={router?.baseUrl} href={router?.baseUrl} />
-        <Metadata label="Last seen" value={device ? formatDate(device.lastSeenAt) : undefined} />
+        <Metadata label="最后发现" value={device ? formatDate(device.lastSeenAt) : undefined} />
       </dl>
 
       <div className="link-list">
-        <h3>Links</h3>
-        {connectedEdges.length > 0 ? connectedEdges.map((edge) => <LinkItem key={edge.id} edge={edge} currentNodeId={node.id} overlay={overlay} onSelectEdge={onSelectEdge} onSaveOverlay={onSaveOverlay} />) : <p>No links are attached to this node yet. Drag from one node handle to another to create a manual link.</p>}
+        <h3>连接</h3>
+        {connectedEdges.length > 0 ? connectedEdges.map((edge) => <LinkItem key={edge.id} edge={edge} currentNodeId={node.id} overlay={overlay} onSelectEdge={onSelectEdge} onSaveOverlay={onSaveOverlay} />) : <p>该节点还没有连接。可从一个节点拖到另一个节点来创建手动连接。</p>}
       </div>
     </div>
   );
@@ -259,26 +259,26 @@ function EdgeDetail({ edge, overlay, onSaveOverlay }: Readonly<{
 }>) {
   const remove = () => {
     if (edge.kind === 'manual') {
-      onSaveOverlay({ ...overlay, edges: overlay.edges.filter((entry) => entry.id !== edge.id) }, 'Manual link removed');
+      onSaveOverlay({ ...overlay, edges: overlay.edges.filter((entry) => entry.id !== edge.id) }, '手动连接已删除');
       return;
     }
 
-    onSaveOverlay({ ...overlay, hiddenEdgeIds: addUnique(overlay.hiddenEdgeIds ?? [], edge.id) }, 'Link hidden');
+    onSaveOverlay({ ...overlay, hiddenEdgeIds: addUnique(overlay.hiddenEdgeIds ?? [], edge.id) }, '连接已隐藏');
   };
 
   return (
     <div className="node-detail">
       <div>
-        <h2>{edge.kind} link</h2>
-        <p>{edge.kind === 'manual' ? 'Manual correction link' : 'Discovered link'}</p>
+        <h2>{edgeKindLabel(edge.kind)}连接</h2>
+        <p>{edge.kind === 'manual' ? '手动修正连接' : '发现到的连接'}</p>
       </div>
       <dl className="metadata-list">
-        <Metadata label="Source" value={edge.sourceNodeId} />
-        <Metadata label="Target" value={edge.targetNodeId} />
-        <Metadata label="Band" value={edge.band} />
+        <Metadata label="来源" value={edge.sourceNodeId} />
+        <Metadata label="目标" value={edge.targetNodeId} />
+        <Metadata label="频段" value={edge.band} />
       </dl>
       <div className="button-row">
-        <button type="button" className={edge.kind === 'manual' ? 'danger-button' : 'ghost-button'} onClick={remove}>{edge.kind === 'manual' ? 'Remove manual link' : 'Hide link'}</button>
+        <button type="button" className={edge.kind === 'manual' ? 'danger-button' : 'ghost-button'} onClick={remove}>{edge.kind === 'manual' ? '删除手动连接' : '隐藏连接'}</button>
       </div>
     </div>
   );
@@ -303,19 +303,19 @@ function LinkItem({ edge, currentNodeId, overlay, onSelectEdge, onSaveOverlay }:
   const peer = edge.sourceNodeId === currentNodeId ? edge.targetNodeId : edge.sourceNodeId;
   const remove = () => {
     if (edge.kind === 'manual') {
-      onSaveOverlay({ ...overlay, edges: overlay.edges.filter((entry) => entry.id !== edge.id) }, 'Manual link removed');
+      onSaveOverlay({ ...overlay, edges: overlay.edges.filter((entry) => entry.id !== edge.id) }, '手动连接已删除');
       return;
     }
-    onSaveOverlay({ ...overlay, hiddenEdgeIds: addUnique(overlay.hiddenEdgeIds ?? [], edge.id) }, 'Link hidden');
+    onSaveOverlay({ ...overlay, hiddenEdgeIds: addUnique(overlay.hiddenEdgeIds ?? [], edge.id) }, '连接已隐藏');
   };
 
   return (
     <article className={`link-item link-item--${edge.kind}`}>
       <button type="button" className="link-button" onClick={() => onSelectEdge(edge.id)}>
-        <span>{edge.kind}{edge.band ? ` · ${edge.band}` : ''}</span>
+        <span>{edgeKindLabel(edge.kind)}{edge.band ? ` · ${edge.band}` : ''}</span>
         <strong>{peer}</strong>
       </button>
-      <button type="button" className="ghost-button" onClick={remove}>{edge.kind === 'manual' ? 'Remove' : 'Hide'}</button>
+      <button type="button" className="ghost-button" onClick={remove}>{edge.kind === 'manual' ? '删除' : '隐藏'}</button>
     </article>
   );
 }
@@ -336,11 +336,11 @@ function RestoreList({ hiddenNodeIds, hiddenEdgeIds, hiddenDeviceIds, hiddenManu
 
   return (
     <div className="restore-list">
-      <h3>Hidden items</h3>
-      {[...hiddenNodeIds].map((nodeId) => <button type="button" key={nodeId} onClick={() => onRestoreNode(nodeId)}>Show node {nodeId}</button>)}
-      {[...hiddenDeviceIds].map((deviceId) => <button type="button" key={deviceId} onClick={() => onRestoreDevice(deviceId)}>Show device {deviceId}</button>)}
-      {[...hiddenManualSwitchIds].map((switchId) => <button type="button" key={switchId} onClick={() => onRestoreManualSwitch(switchId)}>Show switch {switchId}</button>)}
-      {[...hiddenEdgeIds].map((edgeId) => <button type="button" key={edgeId} onClick={() => onRestoreEdge(edgeId)}>Show link {edgeId}</button>)}
+      <h3>已隐藏项目</h3>
+      {[...hiddenNodeIds].map((nodeId) => <button type="button" key={nodeId} onClick={() => onRestoreNode(nodeId)}>显示节点 {nodeId}</button>)}
+      {[...hiddenDeviceIds].map((deviceId) => <button type="button" key={deviceId} onClick={() => onRestoreDevice(deviceId)}>显示设备 {deviceId}</button>)}
+      {[...hiddenManualSwitchIds].map((switchId) => <button type="button" key={switchId} onClick={() => onRestoreManualSwitch(switchId)}>显示交换机 {switchId}</button>)}
+      {[...hiddenEdgeIds].map((edgeId) => <button type="button" key={edgeId} onClick={() => onRestoreEdge(edgeId)}>显示连接 {edgeId}</button>)}
     </div>
   );
 }
@@ -361,6 +361,13 @@ function parseTags(value: string): string[] | undefined {
 
 function addUnique(values: readonly string[], next: string): string[] {
   return [...new Set([...values, next])];
+}
+
+function edgeKindLabel(kind: TopologyEdge['kind']): string {
+  if (kind === 'ethernet') return '以太网';
+  if (kind === 'wifi') return 'Wi‑Fi';
+  if (kind === 'inferred') return '推断';
+  return '手动';
 }
 
 function formatDate(value: string): string {
